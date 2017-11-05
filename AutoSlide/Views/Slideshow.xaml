@@ -1,0 +1,187 @@
+﻿<Page
+    x:Class="AutoSlide.Views.Slideshow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AutoSlide.Views"
+    xmlns:models="using:AutoSlide.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Xaml="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:behaviors="using:Microsoft.Toolkit.Uwp.UI.Animations.Behaviors"
+    xmlns:controls="using:AutoSlide.Controls"
+    mc:Ignorable="d"
+    >
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Style/SlideshowStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+
+    </Page.Resources>
+
+
+    <Grid Background="{StaticResource MainTheme_color_accent}" Name="MainGrid">
+        <Image 
+            Name="MainSlideshowImage" 
+           HorizontalAlignment="Stretch" 
+               VerticalAlignment="Stretch" 
+               Stretch="Uniform" AllowDrop="True" >
+            <interactivity:Interaction.Behaviors>
+                <behaviors:Blur 
+                    x:Name="ImageBackgroundBlur"
+                    AutomaticallyStart="False"
+                    Value="10"
+                    Delay="0"
+                    Duration="500"/>
+            </interactivity:Interaction.Behaviors>
+        </Image>
+
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Name="ContentLoadingPanel">
+            <TextBlock Text="Loaded 0 Images" Foreground="White" HorizontalAlignment="Center" Name="ImagesCountText"/>
+            <TextBlock Text="Processed 0/0 Links" Foreground="White" FontSize="10" HorizontalAlignment="Center" Name="OverallProgressText"/>
+            <ProgressBar Value="0" Maximum="100" Name="OverallProgressLoader" Foreground="{StaticResource MainTheme_color_highlight}" Margin="0,10,0,0" Height="10"/>
+
+        </StackPanel>
+        <ProgressRing Name="LoadingRing" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" IsActive="True" />
+        <SymbolIcon Name="FailedNotification" Visibility="Collapsed" Symbol="Cancel" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+        <Button Style="{StaticResource NavigationButtonLeft}" Click="{x:Bind medialist.decrementPosition}" Name="LeftButton"/>
+
+        <Button Style="{StaticResource NavigationButtonRight}" Click="{x:Bind medialist.incrementPosition}" Name="RightButton"/>
+
+
+        <TextBlock Text="" Style="{StaticResource SlideshowContentTitle}" Visibility="{Binding ElementName=TitleIsVisibleCheckbox, Path=IsChecked}" Name="SlideshowImageTitle"/>
+
+
+        <Grid VerticalAlignment="Bottom" Name="MenuContentGrid">
+
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" x:Name="ContentRow"/>
+            </Grid.RowDefinitions>
+
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="DisplayGridTransform" Y="{Binding ElementName=ContentRow, Path=ActualHeight}">
+                </TranslateTransform>
+            </Grid.RenderTransform>
+
+            <Grid.Resources>
+                <Storyboard x:Name="menuDisplayStoryboardOpen">
+                    <DoubleAnimation
+                        Storyboard.TargetName="DisplayGridTransform"
+                        Storyboard.TargetProperty="Y"
+                        To="1" Duration="0:0:.5"
+                       />
+                </Storyboard>
+                <Storyboard x:Name="menuDisplayStoryboardClose">
+                    <DoubleAnimation
+                        Storyboard.TargetName="DisplayGridTransform"
+                        Storyboard.TargetProperty="Y"
+                        From="1" Duration="0:0:.5"
+                        />
+                </Storyboard>
+            </Grid.Resources>
+
+            <Button
+                Name="ViewMoreButton"
+                Style="{StaticResource NavigationButtonMore}"
+                Grid.Row="0" Click="ViewMoreButtonClick" />
+
+
+            <Grid Style="{StaticResource MenuContentInnerGridStyle}" Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid HorizontalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+
+                    <TextBlock Style="{StaticResource MenuPopupContentTextBlockStyle}">Image Url:</TextBlock>
+                    <TextBlock Grid.Column="1" Foreground="{StaticResource MainTheme_color_bright}" Style="{StaticResource MenuPopupContentTextBlockStyle}" Name="CurrentImageUrl"></TextBlock>
+
+
+                    <TextBlock  Grid.Row="1" Style="{StaticResource MenuPopupContentTextBlockStyle}">Auto-Forward Delay Time(s):</TextBlock>
+                    <TextBox  Grid.Column="1" Grid.Row="1" Style="{StaticResource MenuPopupContentTextBoxStyle}" PlaceholderText="Defaults to 5 seconds" Text="5" TextChanging="TextboxNumeralsOnly" Name="AutoForwardDelayTimeTextBox" LostFocus="timingChanged"></TextBox>
+
+
+                    <TextBlock Grid.Row="2" Style="{StaticResource MenuPopupContentTextBlockStyle}">Auto-Forward Enabled:</TextBlock>
+                    <CheckBox Grid.Column="1" Grid.Row="2" Style="{StaticResource MenuPopupContentCheckbox}" Checked="enableAutoForward" Unchecked="enableAutoForward" Name="AutoForwardEnabledCheckbox" IsChecked="True"></CheckBox>
+
+                    <TextBlock Grid.Row="3" Style="{StaticResource MenuPopupContentTextBlockStyle}">Show Title:</TextBlock>
+                    <CheckBox Grid.Column="1" Grid.Row="3" Style="{StaticResource MenuPopupContentCheckbox}" Name="TitleIsVisibleCheckbox"></CheckBox>
+
+                    <TextBlock Grid.Row="4" Style="{StaticResource MenuPopupContentTextBlockStyle}">Random:</TextBlock>
+                    <CheckBox Grid.Column="1" Grid.Row="4" Style="{StaticResource MenuPopupContentCheckbox}" Name="RandomCheckbox" Checked="enableRandom" Unchecked="enableRandom"></CheckBox>
+
+                </Grid>
+
+
+
+
+
+                <StackPanel Margin="5,5,5,5" Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" Background="{StaticResource MainTheme_color_highlight}"
+                        Click="GoBackButtonClick">
+                        Back to Selection Screen
+                    </Button>
+                    <Button Click="downloadImageAsync" Foreground="White" Background="{StaticResource MainTheme_color_highlight}" IsEnabled="{Binding medialist.Url.canDownload}" Margin="10,0,0,0">
+                        <SymbolIcon Symbol="Download"></SymbolIcon>
+                    </Button>
+                </StackPanel>
+
+
+
+
+
+
+                <!--<ScrollViewer  HorizontalAlignment="Center" Height="200">-->
+                <GridView 
+                    Grid.Row="2"  
+                    Height="200"  
+                    Name="DisplayGrid" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center" 
+                    ItemsSource="{x:Bind medialist}"
+                    
+                    >
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center" 
+                                               Orientation="Horizontal"
+                                               CacheLength="1"
+                                               />
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:DataType="models:MediaUrl"   >
+                            <controls:ImageView Thumb="{x:Bind Image_Thumb_Uri}" Title="{x:Bind Title}" Click="ImageView_Click"/>
+
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+
+                <!--</ScrollViewer>-->
+
+            </Grid>
+        </Grid>
+
+    </Grid>
+</Page>
